@@ -1,0 +1,16 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.idea/
+.vscode/
+.DS_Store
+
+# DVC
+.dvc/cache/
+
+# MLflow local runs (optional; if using DAGsHub MLflow, you may not need this)
+mlruns/
+
+# Jupyter
+.ipynb_checkpoints/

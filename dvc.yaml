@@ -1,0 +1,28 @@
+stages:
+  preprocessing:
+    cmd: python src/preprocessing.py --input data/raw/telco_customer_churn_data.csv --outdir data/processed
+    deps:
+      - src/preprocessing.py
+      - data/raw/telco_customer_churn_data.csv
+    outs:
+      - data/processed/train.csv
+      - data/processed/test.csv
+
+  train:
+    cmd: python src/train.py --train data/processed/train.csv --model_out models/best_model.pkl
+    deps:
+      - src/train.py
+      - data/processed/train.csv
+    outs:
+      - models/best_model.pkl
+
+  evaluate:
+    cmd: python src/evaluate.py --test data/processed/test.csv --model models/best_model.pkl --outdir reports
+    deps:
+      - src/evaluate.py
+      - data/processed/test.csv
+      - models/best_model.pkl
+    outs:
+      - reports/metrics.json
+      - reports/confusion_matrix.png
+      - reports/roc_curve.png
