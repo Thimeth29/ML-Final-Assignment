@@ -1,63 +1,96 @@
-"""train.py
-
-PART 2 – Model Development:
-Train at least 3 models:
-- Logistic Regression
-- Random Forest
-- XGBoost (or Gradient Boosting)
-
-Log all experiments to MLflow:
-- parameters
-- metrics
-- confusion matrix / ROC curve artifacts (you can log from evaluate.py too)
-- model artifacts
-
-Output:
-- best model saved to models/best_model.pkl
-
-This is a template. Replace TODO sections with your implementation.
-"""
-
 import argparse
 from pathlib import Path
+
 import joblib
 import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+)
 
-# TODO: import sklearn models, xgboost, pipelines, encoders, scalers, etc.
-# TODO: import mlflow and mlflow.sklearn
+import mlflow
+import mlflow.sklearn
+
+
+def metrics(y_true, y_pred, y_proba):
+    return {
+        "accuracy": float(accuracy_score(y_true, y_pred)),
+        "precision": float(precision_score(y_true, y_pred, zero_division=0)),
+        "recall": float(recall_score(y_true, y_pred, zero_division=0)),
+        "f1": float(f1_score(y_true, y_pred, zero_division=0)),
+        "roc_auc": float(roc_auc_score(y_true, y_proba)),
+    }
+
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train", required=True, help="Processed train CSV path")
-    parser.add_argument("--model_out", required=True, help="Output model path (.pkl)")
+    parser.add_argument("--train", required=True, help="data/processed/train.csv")
+    parser.add_argument("--model_out", required=True, help="models/best_model.pkl")
     parser.add_argument("--experiment", default="churn-mlops", help="MLflow experiment name")
+    parser.add_argument("--random_state", type=int, default=42)
     args = parser.parse_args()
 
-    train_path = Path(args.train)
-    df = pd.read_csv(train_path)
-
+    df = pd.read_csv(args.train)
     if "Churn" not in df.columns:
-        raise ValueError("Expected target column 'Churn' not found in processed train.csv")
+        raise ValueError("Expected 'Churn' in processed train.csv")
 
-    # TODO 1: Prepare X, y (convert y to 0/1)
-    # y = (df["Churn"] == "Yes").astype(int)
-    # X = df.drop(columns=["Churn"])
+    y = df["Churn"].astype(int)
+    X = df.drop(columns=["Churn"])
 
-    # TODO 2: Build 3 models + training pipeline(s)
-    # TODO 3: Train + evaluate (on a validation split or cross-val)
-    # TODO 4: MLflow logging for each model run
-    # TODO 5: Choose best model based on ROC-AUC (recommended)
+    # Train 3 models
+    candidates = [
+        ("logreg", LogisticRegression(max_iter=2000, random_state=args.random_state)),
+        ("rf", RandomForestClassifier(n_estimators=400, random_state=args.random_state)),
+        ("gb", GradientBoostingClassifier(random_state=args.random_state)),
+    ]
 
-    # Placeholder: save nothing until implemented
+    mlflow.set_experiment(args.experiment)
+
+    best_name, best_model, best_auc, best_run = None, None, -1.0, None
+
+    for name, model in candidates:
+        with mlflow.start_run(run_name=name) as run:
+            model.fit(X, y)
+
+            y_pred = model.predict(X)
+            y_proba = model.predict_proba(X)[:, 1] if hasattr(model, "predict_proba") else y_pred.astype(float)
+
+            m = metrics(y, y_pred, y_proba)
+
+            # Log params
+            mlflow.log_param("model", name)
+            mlflow.log_param("random_state", args.random_state)
+            if name == "rf":
+                mlflow.log_param("n_estimators", 400)
+
+            # Log metrics
+            for k, v in m.items():
+                mlflow.log_metric(k, v)
+
+            # Log model artifact
+            mlflow.sklearn.log_model(model, "model")
+
+            print(f"✅ {name} ROC-AUC: {m['roc_auc']:.4f}")
+
+            if m["roc_auc"] > best_auc:
+                best_auc = m["roc_auc"]
+                best_name = name
+                best_model = model
+                best_run = run.info.run_id
+
+    # Save best model
     out_path = Path(args.model_out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # TODO: replace with actual best_model
-    best_model = {"TODO": "Replace with trained model"}
     joblib.dump(best_model, out_path)
 
+    Path("models").mkdir(exist_ok=True)
+    Path("models/best_run.txt").write_text(best_run or "", encoding="utf-8")
+
+    print(f"\n🏆 Best model: {best_name} | ROC-AUC: {best_auc:.4f}")
     print(f"✅ Saved best model to: {out_path}")
-    print("⚠ NOTE: This is a template. Implement training + MLflow logging.")
+    print("✅ Saved models/best_run.txt")
+
 
 if __name__ == "__main__":
     main()

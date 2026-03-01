@@ -3,7 +3,7 @@ stages:
     cmd: python src/preprocessing.py --input data/raw/Churn_Prediction_DataSet.csv --outdir data/processed
     deps:
       - src/preprocessing.py
-      - data/raw/telco_customer_churn_data.csv
+      - data/raw/Churn_Prediction_DataSet.csv
     outs:
       - data/processed/train.csv
       - data/processed/test.csv
