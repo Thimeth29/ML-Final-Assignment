@@ -36,7 +36,7 @@ stages:
     outs:
     - path: models/best_model.pkl
       hash: md5
-      md5: 4e12391ca4d316e8d8e9d2218ae063f3
+      md5: c2bcc8ed16ed2d955ca2c6c9fc2190d5
       size: 19449113
   evaluate:
     cmd: python src/evaluate.py --test data/processed/test.csv --model 
@@ -48,7 +48,7 @@ stages:
       size: 348310
     - path: models/best_model.pkl
       hash: md5
-      md5: 4e12391ca4d316e8d8e9d2218ae063f3
+      md5: c2bcc8ed16ed2d955ca2c6c9fc2190d5
       size: 19449113
     - path: src/evaluate.py
       hash: md5
