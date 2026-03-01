@@ -29,7 +29,7 @@ def train_and_log_model(model, name, X_train, y_train, experiment_id):
         else:
             mlflow.sklearn.log_model(model, artifact_path="model")
             
-        print(f"✅ {name} trained. Train ROC-AUC: {auc:.4f}")
+        print(f"{name} trained. Train ROC-AUC: {auc:.4f}")
         return auc
 
 def main():
@@ -79,8 +79,8 @@ def main():
         out_path.parent.mkdir(parents=True, exist_ok=True)
         joblib.dump(best_model, out_path)
         
-        print(f"\n🏆 Best Model: {best_name} with Train ROC-AUC: {best_score:.4f}")
-        print(f"✅ Saved to: {out_path}")
+        print(f"\nBest Model: {best_name} with Train ROC-AUC: {best_score:.4f}")
+        print(f"Saved to: {out_path}")
 
 if __name__ == "__main__":
     main()

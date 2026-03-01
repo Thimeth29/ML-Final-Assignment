@@ -1,0 +1,6 @@
+[core]
+    remote = origin
+[remote "origin"]
+    url = https://dagshub.com/tharindu06.stud/ML-Final-Assignment.dvc
+    user = tharindu06.stud
+

@@ -14,3 +14,7 @@ mlruns/
 
 # Jupyter
 .ipynb_checkpoints/
+
+#to avoid path errors
+mlflow.db
+mlruns/
