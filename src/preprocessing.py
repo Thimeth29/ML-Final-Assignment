@@ -8,7 +8,8 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, OrdinalEncoder
+from sklearn.impute import SimpleImputer
 
 
 CAT_COLS = [
@@ -26,10 +27,12 @@ ID_COL = "customerID"
 
 def build_preprocessor() -> ColumnTransformer:
     numeric_pipe = Pipeline(steps=[
+        ("imputer", SimpleImputer(strategy="median")),
         ("scaler", StandardScaler())
     ])
     categorical_pipe = Pipeline(steps=[
-        ("onehot", OneHotEncoder(handle_unknown="ignore"))
+        ("imputer", SimpleImputer(strategy="most_frequent")),
+        ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False))
     ])
 
     return ColumnTransformer(
@@ -62,39 +65,41 @@ def main():
     if missing:
         raise ValueError(f"Dataset missing columns: {sorted(missing)}")
 
-    # Fix TotalCharges: convert blanks to NaN then fill with median
-    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
-    df["TotalCharges"] = df["TotalCharges"].fillna(df["TotalCharges"].median())
+    # Pre-cleaning: Fix TotalCharges (convert blanks to NaN)
+    if "TotalCharges" in df.columns:
+        df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 
     # Map target
-    df[TARGET_COL] = df[TARGET_COL].astype(str).str.strip().map({"Yes": 1, "No": 0})
-    if df[TARGET_COL].isna().any():
-        bad = df[df[TARGET_COL].isna()][TARGET_COL].unique()
-        raise ValueError(f"Churn mapping failed. Unexpected values: {bad}")
+    if TARGET_COL in df.columns:
+        df[TARGET_COL] = df[TARGET_COL].astype(str).str.strip().map({"Yes": 1, "No": 0})
+        # Drop rows where target is missing if any
+        df = df.dropna(subset=[TARGET_COL])
+        df[TARGET_COL] = df[TARGET_COL].astype(int)
 
     # Drop ID
-    df = df.drop(columns=[ID_COL])
+    if ID_COL in df.columns:
+        df = df.drop(columns=[ID_COL])
 
     # Split (stratified)
     train_df, test_df = train_test_split(
         df,
         test_size=args.test_size,
         random_state=args.random_state,
-        stratify=df[TARGET_COL],
+        stratify=df[TARGET_COL] if TARGET_COL in df.columns else None,
     )
 
-    X_train = train_df[CAT_COLS + NUM_COLS]
-    y_train = train_df[TARGET_COL].astype(int)
+    X_train = train_df.drop(columns=[TARGET_COL])
+    y_train = train_df[TARGET_COL]
 
-    X_test = test_df[CAT_COLS + NUM_COLS]
-    y_test = test_df[TARGET_COL].astype(int)
+    X_test = test_df.drop(columns=[TARGET_COL])
+    y_test = test_df[TARGET_COL]
 
     # Fit preprocessor on train only
     preprocessor = build_preprocessor()
     X_train_p = preprocessor.fit_transform(X_train)
     X_test_p = preprocessor.transform(X_test)
 
-    # Get feature names (sklearn >=1.0)
+    # Get feature names
     feature_names = []
     # numeric names
     feature_names.extend(NUM_COLS)
@@ -103,12 +108,12 @@ def main():
     ohe_names = ohe.get_feature_names_out(CAT_COLS).tolist()
     feature_names.extend(ohe_names)
 
-    # Save processed CSVs with target included
-    train_out = pd.DataFrame(X_train_p.toarray() if hasattr(X_train_p, "toarray") else X_train_p, columns=feature_names)
-    train_out[TARGET_COL] = y_train.to_numpy()
+    # Save processed CSVs
+    train_out = pd.DataFrame(X_train_p, columns=feature_names)
+    train_out[TARGET_COL] = y_train.values
 
-    test_out = pd.DataFrame(X_test_p.toarray() if hasattr(X_test_p, "toarray") else X_test_p, columns=feature_names)
-    test_out[TARGET_COL] = y_test.to_numpy()
+    test_out = pd.DataFrame(X_test_p, columns=feature_names)
+    test_out[TARGET_COL] = y_test.values
 
     train_path = outdir / "train.csv"
     test_path = outdir / "test.csv"
@@ -121,10 +126,8 @@ def main():
     with open("models/feature_names.json", "w", encoding="utf-8") as f:
         json.dump(feature_names, f, indent=2)
 
-    print(f"✅ Saved: {train_path}")
-    print(f"✅ Saved: {test_path}")
-    print("✅ Saved: models/preprocessor.pkl")
-    print("✅ Saved: models/feature_names.json")
+    print(f"Preprocessing complete. Saved to: {outdir}")
+    print("Model artifacts saved to: models/")
 
 
 if __name__ == "__main__":

@@ -1,21 +1,14 @@
-"""data_ingestion.py
-
-Optional stage: if you want to download or validate the raw dataset automatically.
-For this assignment, many teams simply place the CSV into data/raw/ and track it with DVC.
-
-TODO (optional):
-- validate that file exists
-- validate required columns
-- write a simple data quality report
-"""
-
 import argparse
+import json
 from pathlib import Path
 import pandas as pd
 
 REQUIRED_COLUMNS = [
-    # TODO: fill with actual columns from telco dataset once you inspect it
-    # e.g. "customerID", "gender", ...
+    "customerID", "gender", "SeniorCitizen", "Partner", "Dependents",
+    "tenure", "PhoneService", "MultipleLines", "InternetService",
+    "OnlineSecurity", "OnlineBackup", "DeviceProtection", "TechSupport",
+    "StreamingTV", "StreamingMovies", "Contract", "PaperlessBilling",
+    "PaymentMethod", "MonthlyCharges", "TotalCharges", "Churn"
 ]
 
 def main():
@@ -29,20 +22,36 @@ def main():
         raise FileNotFoundError(f"Raw data not found: {in_path}")
 
     df = pd.read_csv(in_path)
+    df.columns = [c.strip() for c in df.columns]
 
-    # TODO: check required columns, missing values, basic stats, etc.
+    # Validate required columns
+    missing = set(REQUIRED_COLUMNS) - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing columns: {missing}")
+
+    # Basic data quality metrics
     report = {
-        "rows": int(df.shape[0]),
-        "cols": int(df.shape[1]),
-        "missing_by_column": df.isna().sum().to_dict(),
+        "summary": {
+            "total_rows": int(df.shape[0]),
+            "total_cols": int(df.shape[1]),
+        },
+        "missing_values": df.isna().sum().to_dict(),
+        "data_types": df.dtypes.astype(str).to_dict(),
+        "duplicates": int(df.duplicated().sum()),
+        "numeric_stats": df.describe().to_dict()
+    }
+
+    # Custom validation: Check for empty strings in TotalCharges which often causes issues
+    empty_total_charges = (df["TotalCharges"].astype(str).str.strip() == "").sum()
+    report["custom_checks"] = {
+        "empty_total_charges_count": int(empty_total_charges)
     }
 
     Path(args.report_out).parent.mkdir(parents=True, exist_ok=True)
-    import json
     with open(args.report_out, "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2)
+        json.dump(report, f, indent=4)
 
-    print(f"✅ Data ingestion/validation report saved to: {args.report_out}")
+    print(f"Data validation complete. Report saved to: {args.report_out}")
 
 if __name__ == "__main__":
     main()
