@@ -70,9 +70,9 @@ def main():
     plt.savefig(outdir / "roc_curve.png", dpi=200)
     plt.close()
 
-    print("✅ Saved reports/metrics.json")
-    print("✅ Saved reports/confusion_matrix.png")
-    print("✅ Saved reports/roc_curve.png")
+    print("Saved reports/metrics.json")
+    print("Saved reports/confusion_matrix.png")
+    print("Saved reports/roc_curve.png")
     print("Metrics:", metrics)
 
 

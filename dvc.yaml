@@ -1,4 +1,12 @@
 stages:
+  data_ingestion:
+    cmd: python src/data_ingestion.py --source data/source/Churn_Prediction_DataSet.csv --dest data/raw/Churn_Prediction_DataSet.csv
+    deps:
+      - src/data_ingestion.py
+      - data/source/Churn_Prediction_DataSet.csv
+    outs:
+      - data/raw/Churn_Prediction_DataSet.csv
+
   preprocessing:
     cmd: python src/preprocessing.py --input data/raw/Churn_Prediction_DataSet.csv --outdir data/processed
     deps:
@@ -7,6 +15,8 @@ stages:
     outs:
       - data/processed/train.csv
       - data/processed/test.csv
+      - models/preprocessor.pkl
+      - models/feature_names.json
 
   train:
     cmd: python src/train.py --train data/processed/train.csv --model_out models/best_model.pkl
@@ -15,6 +25,7 @@ stages:
       - data/processed/train.csv
     outs:
       - models/best_model.pkl
+      - models/best_run.txt
 
   evaluate:
     cmd: python src/evaluate.py --test data/processed/test.csv --model models/best_model.pkl --outdir reports
