@@ -9,5 +9,6 @@ uvicorn[standard]>=0.27
 matplotlib>=3.8
 joblib>=1.3
 pydantic>=2.6
-
-#Here
+seaborn>=0.12
+apache-airflow>=2.8
+dagshub>=0.3
