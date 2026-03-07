@@ -8,10 +8,12 @@ stages:
       hash: md5
       md5: 0f9de68e012bd3aed5fa7cdc9fc421af
       size: 977501
+      isexec: true
     - path: src/preprocessing.py
       hash: md5
       md5: 5688930f193e4b7ceb94047a868bcf39
       size: 4452
+      isexec: true
     outs:
     - path: data/processed/test.csv
       hash: md5
@@ -76,10 +78,12 @@ stages:
       hash: md5
       md5: 0f9de68e012bd3aed5fa7cdc9fc421af
       size: 977501
+      isexec: true
     - path: src/data_ingestion.py
       hash: md5
       md5: 811a22030a5fb663c5dfddffd320a7a7
       size: 2043
+      isexec: true
     outs:
     - path: reports/data_quality_report.json
       hash: md5

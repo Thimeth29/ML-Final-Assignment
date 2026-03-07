@@ -1,57 +1,51 @@
-"""Airflow DAG (template)
-
-Tasks required by assignment:
-1) Data ingestion
-2) Data validation
-3) Feature engineering (preprocessing)
-4) Model training
-5) Model evaluation
-6) Model registration
-
-This template uses BashOperator to call your Python scripts inside the Airflow container.
-It assumes your repo is mounted to: /opt/airflow/project (see docker-compose).
-"""
-
-from airflow import DAG
-from airflow.operators.bash import BashOperator
 from datetime import datetime
+from airflow import DAG
+from airflow.operators.python import PythonOperator
 
-DEFAULT_ARGS = {"owner": "team", "retries": 0}
+from tasks.ingestion_task import run_ingestion
+from tasks.validation_task import run_validation
+from tasks.feature_engineering_task import run_feature_engineering
+from tasks.training_task import run_training
+from tasks.evaluation_task import run_evaluation
+from tasks.registration_task import run_registration
 
 with DAG(
-    dag_id="churn_mlops_pipeline",
-    default_args=DEFAULT_ARGS,
+    dag_id="churn_mlops_end_to_end",
     start_date=datetime(2025, 1, 1),
     schedule=None,
     catchup=False,
-    tags=["churn", "mlops"],
+    tags=["mlops", "churn"],
 ) as dag:
 
-    # TODO: optionally call src/data_ingestion.py to produce a quality report
-    ingest = BashOperator(
+    t1 = PythonOperator(
         task_id="data_ingestion",
-        bash_command="python /opt/airflow/project/src/data_ingestion.py --input /opt/airflow/project/data/raw/telco_customer_churn_data.csv --report_out /opt/airflow/project/reports/data_quality_report.json",
+        python_callable=run_ingestion,
     )
 
-    preprocess = BashOperator(
-        task_id="preprocessing",
-        bash_command="python /opt/airflow/project/src/preprocessing.py --input /opt/airflow/project/data/raw/telco_customer_churn_data.csv --outdir /opt/airflow/project/data/processed",
+    t2 = PythonOperator(
+        task_id="data_validation",
+        python_callable=run_validation,
     )
 
-    train = BashOperator(
-        task_id="training",
-        bash_command="python /opt/airflow/project/src/train.py --train /opt/airflow/project/data/processed/train.csv --model_out /opt/airflow/project/models/best_model.pkl",
+    t3 = PythonOperator(
+        task_id="feature_engineering",
+        python_callable=run_feature_engineering,
     )
 
-    evaluate = BashOperator(
-        task_id="evaluation",
-        bash_command="python /opt/airflow/project/src/evaluate.py --test /opt/airflow/project/data/processed/test.csv --model /opt/airflow/project/models/best_model.pkl --outdir /opt/airflow/project/reports",
+    t4 = PythonOperator(
+        task_id="model_training",
+        python_callable=run_training,
     )
 
-    # TODO: implement real model registration (MLflow Model Registry or "copy + tag best run")
-    register = BashOperator(
+    t5 = PythonOperator(
+        task_id="model_evaluation",
+        python_callable=run_evaluation,
+    )
+
+    t6 = PythonOperator(
         task_id="model_registration",
-        bash_command="echo 'TODO: register model (MLflow registry or tagging)';",
+        python_callable=run_registration,
     )
 
-    ingest >> preprocess >> train >> evaluate >> register
+    # Proper dependencies
+    t1 >> t2 >> t3 >> t4 >> t5 >> t6
