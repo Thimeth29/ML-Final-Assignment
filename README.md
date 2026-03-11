@@ -123,10 +123,11 @@ From the `airflow/` directory:
 docker compose -f docker-compose.airflow.yml up
 ```
 
-The DAG ID is `churn_mlops_end_to_end`.
+The DAG ID is `churn_mlops_end_to_end`..
 
 ## Notes
 
 - The API expects the preprocessing artifacts and trained model to exist in `models/`.
 - Airflow runs the DVC stages from inside the mounted project directory.
 - MLflow artifacts are logged during training and evaluation.
+- hello world
