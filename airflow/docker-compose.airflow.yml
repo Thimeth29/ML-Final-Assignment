@@ -20,7 +20,7 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__WEBSERVER__SECRET_KEY: "my_super_secret_key_12345"
-      PIP_ADDITIONAL_REQUIREMENTS: "dvc[s3] pandas scikit-learn joblib matplotlib mlflow"
+      PIP_ADDITIONAL_REQUIREMENTS: "dvc[s3] pandas scikit-learn joblib matplotlib mlflow xgboost seaborn"
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
       _AIRFLOW_WWW_USER_USERNAME: airflow
@@ -44,7 +44,7 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__WEBSERVER__SECRET_KEY: "my_super_secret_key_12345"
-      PIP_ADDITIONAL_REQUIREMENTS: "dvc[s3] pandas scikit-learn joblib matplotlib mlflow"
+      PIP_ADDITIONAL_REQUIREMENTS: "dvc[s3] pandas scikit-learn joblib matplotlib mlflow xgboost seaborn"
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     volumes:
