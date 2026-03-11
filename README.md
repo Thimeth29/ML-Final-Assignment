@@ -123,7 +123,7 @@ From the `airflow/` directory:
 docker compose -f docker-compose.airflow.yml up
 ```
 
-The DAG ID is `churn_mlops_end_to_end`.
+The DAG ID is `churn_mlops_end_to_end`..
 
 ## Notes
 
